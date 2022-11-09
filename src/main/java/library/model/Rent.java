@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonDiscriminator;
 import org.bson.codecs.pojo.annotations.BsonProperty;
 
@@ -25,17 +26,26 @@ public class Rent extends AbstractEntity {
     private Client client;
     @BsonProperty("book")
     private Book book;
-
-    public Rent(@BsonProperty("_id") UUID entityId,
+    @BsonCreator
+    public Rent(@BsonProperty("_id") UniqueId entityId,
                 @BsonProperty("client") Client client,
-                @BsonProperty("book")Book book) {
+                @BsonProperty("book")Book book,
+                @BsonProperty("begintime") Date begintime,
+                @BsonProperty("endtime") Date endtime) {
         super(entityId);
         this.client = client;
-        this.beginTime = new Date();
+        this.beginTime = begintime;
         this.book = book;
-        this.endTime = calculateEndTime(beginTime);
+        this.endTime = endtime;
     }
 
+    public Rent(Client client, Book book) {
+        super(new UniqueId());
+        this.client = client;
+        this.book = book;
+        this.beginTime = new Date();
+        this.endTime = calculateEndTime(beginTime);
+    }
 
     private Date calculateEndTime(Date beginTime){
         Calendar calendar = Calendar.getInstance();

@@ -1,6 +1,5 @@
 package library.managers;
 
-import jakarta.persistence.EntityManager;
 import library.model.Adult;
 import library.model.Child;
 import library.model.Client;
@@ -26,15 +25,24 @@ public class ClientManager {
         return clientRepository.findAll();
     }
 
-    public void registerClient(String firstname, String lastname, String personalID, int age) {
-        if (age < 18) {
-            clientRepository.add(new Child(firstname, lastname, personalID, age));
+    public Client registerClient(String firstname, String lastname, String personalID, int age) {
+        Client client;
+        if(clientRepository.findByPersonalID(personalID) == null){
+            if (age < 18) {
+                client = new Child(firstname, lastname, personalID, age);
+                clientRepository.add(client);
+            } else {
+                client = new Adult(firstname, lastname, personalID, age);
+                clientRepository.add(client);
+            }
         } else {
-            clientRepository.add(new Adult(firstname, lastname, personalID, age));
+            throw new RuntimeException("Ten pesel znajduje sie juz w bazie danych");
         }
+
+        return client;
     }
 
-/*    public void unregisterClient(String personalID) throws Exception {
+    public void unregisterClient(String personalID) throws Exception {
         Client client = clientRepository.findByPersonalID(personalID);
         if (client.getDebt() > 0) {
             throw new Exception("Client have to pay debt firstly");
@@ -42,7 +50,7 @@ public class ClientManager {
         if (!rentRepository.findByClient(client).isEmpty()) {
             throw new Exception("Client have to pay return books firstly");
         }
-        client.setArchive(true);
+        client.setArchived(true);
         clientRepository.update(client);
     }
 
@@ -53,5 +61,5 @@ public class ClientManager {
     public Float getDebt(String personalID) {
         Client client = clientRepository.findByPersonalID(personalID);
         return client.getDebt();
-    }*/
+    }
 }

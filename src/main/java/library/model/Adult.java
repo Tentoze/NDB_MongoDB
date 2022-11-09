@@ -6,6 +6,7 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonDiscriminator;
 import org.bson.codecs.pojo.annotations.BsonProperty;
 
@@ -15,9 +16,8 @@ import java.util.UUID;
 @BsonDiscriminator(key = "_clazz", value = "adult")
 public class Adult extends Client {
 
-
-    public Adult(
-            @BsonProperty("firstname") String firstName,
+@BsonCreator
+    public Adult(@BsonProperty("firstname") String firstName,
             @BsonProperty("lastname") String lastName,
             @BsonProperty("personalid") String personalID,
             @BsonProperty("age") Integer age) {

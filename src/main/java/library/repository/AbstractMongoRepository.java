@@ -4,14 +4,12 @@ import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
 import com.mongodb.ReadPreference;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
 import com.mongodb.client.model.Filters;
 import library.model.Adult;
 import library.model.Child;
 import library.model.Client;
+import library.model.UniqueIdCodecProvider;
 import org.bson.UuidRepresentation;
 import org.bson.codecs.UuidCodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
@@ -27,14 +25,14 @@ import java.util.UUID;
 
 public abstract class AbstractMongoRepository<T> implements AutoCloseable {
 
-    private ConnectionString connectionString = new ConnectionString("mongodb://localhost:27017");
-    private MongoCredential credential = MongoCredential.createCredential("admin", "admin", "adminpassword".toCharArray());
-    private CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder()
+    protected ConnectionString connectionString = new ConnectionString("mongodb://localhost:27017");
+    protected MongoCredential credential = MongoCredential.createCredential("admin", "admin", "adminpassword".toCharArray());
+    protected CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder()
             .automatic(true)
             .register(Client.class, Child.class, Adult.class)
             .conventions(Conventions.DEFAULT_CONVENTIONS)
             .build());
-    private MongoClient mongoClient;
+    protected MongoClient mongoClient;
     protected MongoDatabase mongoDatabase;
     protected final String collectionName;
     private final Class<T> entityClass;
@@ -45,14 +43,15 @@ public abstract class AbstractMongoRepository<T> implements AutoCloseable {
         initDbConnection();
     }
 
-    private void initDbConnection() {
+    protected void initDbConnection() {
         MongoClientSettings settings = MongoClientSettings.builder()
                 .credential(credential)
                 .applyConnectionString(connectionString)
                 .uuidRepresentation(UuidRepresentation.STANDARD)
                 .codecRegistry(CodecRegistries.fromRegistries(
-                        CodecRegistries.fromProviders(new UuidCodecProvider(UuidRepresentation.STANDARD)),
-                        MongoClientSettings.getDefaultCodecRegistry(),pojoCodecRegistry)
+                        CodecRegistries.fromProviders(new UniqueIdCodecProvider()),
+                        MongoClientSettings.getDefaultCodecRegistry(),
+                        pojoCodecRegistry)
                 ).build();
     mongoClient = MongoClients.create(settings);
     mongoDatabase = mongoClient.getDatabase("library");
@@ -81,6 +80,7 @@ public abstract class AbstractMongoRepository<T> implements AutoCloseable {
         MongoCollection<T> collection = mongoDatabase.getCollection(collectionName, entityClass);
         Bson filter = Filters.eq("_id", id);
         collection.deleteOne(filter);
+        ClientSession clientSession = mongoClient.startSession();
     }
 
     @Override

@@ -1,13 +1,9 @@
 package library.model;
 
-import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonProperty;
-
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -21,28 +17,34 @@ public class Book extends AbstractEntity {
     private String author;
     @BsonProperty("genre")
     private String genre;
-    @BsonProperty("isarchive")
-    private boolean isArchive;
+    @BsonProperty("archived")
+    private boolean isArchived;
+    @BsonProperty("rented")
+    private int isRented;
 
     @BsonCreator
-    public Book(@BsonProperty("_id") UUID enitityId,
+    public Book(@BsonProperty("_id") UniqueId enitityId,
                 @BsonProperty("title") String title,
                 @BsonProperty("author") String author,
                 @BsonProperty("serialnumber") String serialNumber,
+                @BsonProperty("archived") boolean isArchived,
+                @BsonProperty("rented") int isRented,
                 @BsonProperty("genre") String genre) {
         super(enitityId);
         this.title = title;
         this.author = author;
         this.serialNumber = serialNumber;
         this.genre = genre;
-        this.isArchive = false;
+        this.isRented = isRented;
+        this.isArchived = isArchived;
     }
 
-    public Book(String serialNumber, String title, String author, String genre) {
-        super(UUID.randomUUID());
+    public Book(String title, String author, String serialNumber, String genre) {
+        super(new UniqueId());
         this.serialNumber = serialNumber;
         this.title = title;
         this.author = author;
         this.genre = genre;
+        this.isRented = 0;
     }
 }

@@ -1,24 +1,26 @@
 package library.managers;
 
-import jakarta.persistence.EntityManager;
 import library.model.Book;
 import library.model.Client;
 import library.model.Rent;
+import library.repository.BookRepository;
+import library.repository.ClientRepository;
+import library.repository.RentRepository;
 
 
 import java.util.Date;
 import java.util.List;
 
 public class RentManager {
-/*
+
     private RentRepository rentRepository;
     private ClientRepository clientRepository;
     private BookRepository bookRepository;
 
-    public RentManager(EntityManager entityManager) {
-        this.rentRepository = new RentRepository(entityManager);
-        this.clientRepository = new ClientRepository(entityManager);
-        this.bookRepository = new BookRepository(entityManager);
+    public RentManager() {
+        this.rentRepository = new RentRepository();
+        this.clientRepository = new ClientRepository();
+        this.bookRepository = new BookRepository();
     }
 
     public Rent rentBook(String personalID, String serialNumber) throws Exception {
@@ -26,23 +28,26 @@ public class RentManager {
             Client client = clientRepository.findByPersonalID(personalID);
             Book book = bookRepository.findBySerialNumber(serialNumber);
             checkIfBookCanBeRented(client, book);
-            return rentRepository.add(new Rent(client, book));
+            bookRepository.incrementIsRented(book);
+            Rent rent = new Rent(client, book);
+            rentRepository.add(rent);
+            return rent;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     private void checkIfBookCanBeRented(Client client, Book book) throws Exception {
-        if (client.isArchive()) {
+        if (client.isArchived()) {
             throw new Exception("Client is archived");
         }
-        if (book.isArchive()) {
+        if (book.isArchived()) {
             throw new Exception("Book is archived");
         }
-        if (rentRepository.existsByBook(book)) {
+        if (rentRepository.findByBook(book) != null) {
             throw new Exception("Book is already rented");
         }
-        if (client.getMaxBooks() < rentRepository.countByClient(client) + 1) {
+        if (client.getMaxBooks() < rentRepository.findByClient(client).size() + 1) {
             throw new Exception("Client have already rented max number of books");
         }
         if (client.getDebt() > 0) {
@@ -65,7 +70,7 @@ public class RentManager {
                 client.setDebt(client.getDebt() + client.getPenalty());
                 clientRepository.update(client);
             }
-            rentRepository.remove(rent);
+            rentRepository.delete(rent.getEntityId().getUUID());
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -87,7 +92,7 @@ public class RentManager {
     public List<Rent> getRentByClient(String personalID){
         return rentRepository.findByClient(clientRepository.findByPersonalID(personalID));
     }
-*/
+
 
 
 

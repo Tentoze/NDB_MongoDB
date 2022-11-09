@@ -1,20 +1,16 @@
 package library.model;
 
 
-import jakarta.persistence.*;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonDiscriminator;
 import org.bson.codecs.pojo.annotations.BsonProperty;
 
-import java.util.UUID;
-
 
 @Getter
 @Setter
+@BsonDiscriminator(key = "_clazz")
 public abstract class Client extends AbstractEntity {
 
     @BsonProperty("personalid")
@@ -25,33 +21,35 @@ public abstract class Client extends AbstractEntity {
     private String lastName;
     @BsonProperty("age")
     private Integer age;
-    @BsonProperty("isarchive")
-    private boolean isArchive;
+    @BsonProperty("isarchived")
+    private boolean isArchived;
     @BsonProperty("debt")
     private Float debt;
 
     @BsonCreator
-    public Client(@BsonProperty("_id") UUID enitityId,
+    public Client(@BsonProperty("_id") UniqueId enitityId,
                   @BsonProperty("firstname") String firstName,
                   @BsonProperty("lastname") String lastName,
                   @BsonProperty("personalid") String personalID,
+                  @BsonProperty("isarchived") boolean isArchived,
+                  @BsonProperty("debt") Float debt,
                   @BsonProperty("age") Integer age) {
         super(enitityId);
         this.firstName = firstName;
         this.lastName = lastName;
         this.personalID = personalID;
         this.age = age;
-        this.isArchive = false;
-        this.debt = (float) 0.0;
+        this.isArchived = isArchived;
+        this.debt = debt;
     }
 
-    public Client(String personalID, String firstName, String lastName, Integer age) {
-        super(UUID.randomUUID());
+    public Client(String firstName, String lastName,  String personalID, Integer age) {
+        super(new UniqueId());
         this.firstName = firstName;
         this.lastName = lastName;
         this.personalID = personalID;
         this.age = age;
-        this.isArchive = false;
+        this.isArchived = false;
         this.debt = (float) 0.0;
     }
 

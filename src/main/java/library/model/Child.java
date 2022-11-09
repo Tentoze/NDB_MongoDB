@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonDiscriminator;
 import org.bson.codecs.pojo.annotations.BsonProperty;
 
@@ -15,10 +16,7 @@ import java.util.UUID;
 @Getter
 @BsonDiscriminator(key = "_clazz",value = "child")
 public class Child extends Client {
-
-    @BsonProperty("clientype")
-    private String clientType;
-
+    @BsonCreator
     public Child(@BsonProperty("firstname") String firstName,
                  @BsonProperty("lastname") String lastName,
                  @BsonProperty("personalid") String personalID,
@@ -28,17 +26,17 @@ public class Child extends Client {
 
     @Override
     public Float getPenalty() {
-        return (float)(5*2);
+        return (float)(5*1.2);
     }
 
     @Override
     public Integer getMaxDays() {
-        return 90;
+        return 60;
     }
 
     @Override
     public Integer getMaxBooks() {
-        return 5;
+        return 3;
     }
 
 }
