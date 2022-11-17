@@ -6,6 +6,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import library.model.Book;
 import library.model.Client;
+import org.bson.BsonDocument;
 import org.bson.conversions.Bson;
 
 public class ClientRepository extends AbstractMongoRepository<Client> {

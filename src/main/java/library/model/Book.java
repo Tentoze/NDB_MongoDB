@@ -47,4 +47,17 @@ public class Book extends AbstractEntity {
         this.genre = genre;
         this.isRented = 0;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Book{");
+        sb.append("serialNumber='").append(serialNumber).append('\'');
+        sb.append(", title='").append(title).append('\'');
+        sb.append(", author='").append(author).append('\'');
+        sb.append(", genre='").append(genre).append('\'');
+        sb.append(", isArchived=").append(isArchived);
+        sb.append(", isRented=").append(isRented);
+        sb.append('}');
+        return sb.toString();
+    }
 }

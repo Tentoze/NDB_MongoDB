@@ -53,6 +53,19 @@ public abstract class Client extends AbstractEntity {
         this.debt = (float) 0.0;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Client{");
+        sb.append("personalID='").append(personalID).append('\'');
+        sb.append(", firstName='").append(firstName).append('\'');
+        sb.append(", lastName='").append(lastName).append('\'');
+        sb.append(", age=").append(age);
+        sb.append(", isArchived=").append(isArchived);
+        sb.append(", debt=").append(debt);
+        sb.append('}');
+        return sb.toString();
+    }
+
     public abstract Float getPenalty();
 
     public abstract Integer getMaxDays();

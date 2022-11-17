@@ -42,13 +42,20 @@ class mainTest {
         bookRepository.clearDatabase();
     }
     @Test
-    void addSameObjects() throws Exception {
-        bookManager.registerBook("s","s","123213","3213");
-        var xd2 = bookManager.getBook("123213");
-        //clientManager.registerClient("imie", "naziwsko", "231312341", 45);
+    void testCRUD() throws Exception {
+        var client1 = clientManager.registerClient("imie", "naziwsko", "231312341", 45);
+        var client2 = clientManager.registerClient("dziecko", "naziwsko", "2313123341", 13);
+        var book1 = bookManager.registerBook("najlepssza ksiega1", "najlepszy autor1", "21313412", "genre");
+        var book2 = bookManager.registerBook("najlepssza ksiega2", "najlepszy autor2", "21313413", "genre");
+        rentManager.rentBook("2313123341", "21313412");
+        rentManager.rentBook("2313123341", "21313413");
 
-        var xd = clientManager.getClient("231312341");
-        clientManager.registerClient("dziecko", "naziwsko", "2313123341", 13);
+        assertEquals(clientRepository.findByPersonalID("231312341").toString(), client1.toString());
+        client1.setAge(50);
+        clientRepository.update(client1);
+        assertEquals(clientRepository.findByPersonalID("231312341").getAge(),50);
+        clientRepository.delete(client1.getEntityId().getUUID());
+        assertNull(clientRepository.findByPersonalID("231312341"));
 
     }
 
@@ -85,6 +92,7 @@ class mainTest {
         rentManager.rentBook("2313123341", "21313412");
         rentManager.rentBook("2313123341", "21313413");
         rentManager.rentBook("2313123341", "21313414");
+        rentManager.getRentByBook("21313414");
         assertThrows(Exception.class, () -> {
             rentManager.rentBook("2313123341", "21313416");
         });

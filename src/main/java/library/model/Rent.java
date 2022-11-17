@@ -39,6 +39,17 @@ public class Rent extends AbstractEntity {
         this.endTime = endtime;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Rent{");
+        sb.append("beginTime=").append(beginTime);
+        sb.append(", endTime=").append(endTime);
+        sb.append(", client=").append(client);
+        sb.append(", book=").append(book);
+        sb.append('}');
+        return sb.toString();
+    }
+
     public Rent(Client client, Book book) {
         super(new UniqueId());
         this.client = client;
