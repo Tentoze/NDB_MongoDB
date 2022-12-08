@@ -5,20 +5,24 @@ import library.model.Child;
 import library.model.Client;
 import library.repository.ClientRepository;
 import library.repository.RentRepository;
+import library.repository.mongo.ClientMongoRepository;
+import library.repository.mongo.RentMongoRepository;
+import library.repository.redis.ClientRedisRepository;
+import library.repository.redis.RentRedisRepository;
 
 import java.util.List;
 
 public class ClientManager {
-    private ClientRepository clientRepository;
     private RentRepository rentRepository;
+    private ClientRepository clientRepository;
 
     public ClientManager() {
-        this.clientRepository = new ClientRepository();
-        this.rentRepository = new RentRepository();
+        this.rentRepository = new RentRepository(new RentMongoRepository(), new RentRedisRepository());
+        this.clientRepository = new ClientRepository(new ClientRedisRepository(),new ClientMongoRepository());
     }
 
     public Client getClient(String personalID) {
-        return clientRepository.findByPersonalID(personalID);
+        return clientRepository.getByPersonalID(personalID).orElse(null);
     }
 
     public List<Client> findAllClients() {
@@ -27,7 +31,7 @@ public class ClientManager {
 
     public Client registerClient(String firstname, String lastname, String personalID, int age) {
         Client client;
-        if(clientRepository.findByPersonalID(personalID) == null){
+        if(clientRepository.getByPersonalID(personalID).orElse(null) == null){
             if (age < 18) {
                 client = new Child(firstname, lastname, personalID, age);
                 clientRepository.add(client);
@@ -43,7 +47,7 @@ public class ClientManager {
     }
 
     public void unregisterClient(String personalID) throws Exception {
-        Client client = clientRepository.findByPersonalID(personalID);
+        Client client = clientRepository.getByPersonalID(personalID).orElseThrow(() -> new Exception("There is no client with that personalID"));
         if (client.getDebt() > 0) {
             throw new Exception("Client have to pay debt firstly");
         }
@@ -55,11 +59,11 @@ public class ClientManager {
     }
 
     public void payDebt(String personalID, Float amount) throws Exception {
-        Client client = clientRepository.findByPersonalID(personalID);
+        Client client = clientRepository.getByPersonalID(personalID).orElseThrow(() -> new Exception("There is no client with that personalID"));
       //  clientRepository.updateDebtByPersonalID(personalID, client.getDebt() - amount);
     }
-    public Float getDebt(String personalID) {
-        Client client = clientRepository.findByPersonalID(personalID);
+    public Float getDebt(String personalID) throws Exception {
+        Client client = clientRepository.getByPersonalID(personalID).orElseThrow(() -> new Exception("There is no client with that personalID"));
         return client.getDebt();
     }
 }

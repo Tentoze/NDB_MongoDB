@@ -1,17 +1,21 @@
 package library.model;
 
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
 import java.util.UUID;
+@EqualsAndHashCode
+@SuperBuilder
+@NoArgsConstructor
 
 public class UniqueId {
-    private final UUID id;
+    private UUID id;
 
     UniqueId(UUID id) {
         this.id = id;
     }
 
-    UniqueId() {
-        this.id = UUID.randomUUID();
-    }
 
     public UUID getUUID() {
         return id;

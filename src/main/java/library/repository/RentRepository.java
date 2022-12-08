@@ -1,58 +1,80 @@
 package library.repository;
 
-import com.mongodb.client.ClientSession;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
-import jakarta.persistence.EntityManager;
 import library.model.Book;
 import library.model.Client;
 import library.model.Rent;
-import org.bson.conversions.Bson;
+import library.repository.mongo.RentMongoRepository;
+import library.repository.redis.RentRedisRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-public class RentRepository extends AbstractMongoRepository {
+public class RentRepository implements RepositoryInterface<Rent> {
 
+    private RentMongoRepository rentMongoRepository;
+    private RentRedisRepository rentRedisRepository;
 
-    public RentRepository() {
-        super("rents", Rent.class);
+    public RentRepository(RentMongoRepository rentMongoRepository, RentRedisRepository rentRedisRepository) {
+        this.rentMongoRepository = rentMongoRepository;
+        this.rentRedisRepository = rentRedisRepository;
     }
-    public List<Rent> findByClient(Client client) {
-        MongoCollection<Rent> collection = mongoDatabase.getCollection(collectionName, Rent.class);
-        Bson filter = Filters.eq("client._id", client.getEntityId());
-        return collection.find().filter(filter).into(new ArrayList<>());
-    }
+
     public Rent findByBook(Book book) {
-        MongoCollection<Rent> collection = mongoDatabase.getCollection(collectionName, Rent.class);
-        Bson filter = Filters.eq("book._id", book.getEntityId());
-        return collection.find().filter(filter).first();
+        return rentMongoRepository.findByBook(book);
     }
-    public void update(Rent rent) {
-        ClientSession clientSession = mongoClient.startSession();
-        try {
-            clientSession.startTransaction();
-            MongoCollection<Rent> clientsCollection = mongoDatabase.getCollection(collectionName, Rent.class);
-            Bson filter = Filters.eq("_id", rent.getEntityId());
-            Bson setUpdate = Updates.combine(
-                    Updates.set("client", rent.getClient()),
-                    Updates.set("book", rent.getBook())
-            );
-            clientsCollection.updateOne(clientSession, filter, setUpdate);
-            clientSession.commitTransaction();
-        } catch (Exception e) {
-            clientSession.abortTransaction();
-        } finally {
-            clientSession.close();
+
+    public List<Rent> findByClient(Client client) {
+        return rentMongoRepository.findByClient(client);
+    }
+
+    @Override
+    public Rent add(Rent entity) {
+       // rentRedisRepository.add(entity);
+        rentMongoRepository.add(entity);
+        return entity;
+    }
+
+    @Override
+    public Optional<Rent> getById(UUID id) {
+        Rent rent = null;
+        if (rentRedisRepository.checkConnection()) {
+            rent = rentRedisRepository.getById(id).orElse(null);
         }
-
+        if (rent == null) {
+            return Optional.ofNullable(rentMongoRepository.findById(id));
+        }
+        return Optional.of(rent);
     }
-    public void clearDatabase() {
-        MongoCollection<Rent> collection = mongoDatabase.getCollection(collectionName, Rent.class);
-        collection.drop();
+
+    @Override
+    public void delete(UUID id) {
+        rentRedisRepository.delete(id);
+        rentMongoRepository.delete(id);
     }
 
+    @Override
+    public void update(Rent entity) {
+        rentRedisRepository.update(entity);
+        rentMongoRepository.update(entity);
+    }
 
+    @Override
+    public long size() {
+        return findAll().size();
+    }
 
+    @Override
+    public List<Rent> findAll() {
+        List<Rent> rents = new ArrayList<>();
+        if (rentRedisRepository.checkConnection()) {
+            List<Rent> found = rentRedisRepository.findAll();
+            rents.addAll(found);
+        } else {
+            List<Rent> found = rentMongoRepository.findAll();
+            rents.addAll(found);
+        }
+        return rents;
+    }
 }

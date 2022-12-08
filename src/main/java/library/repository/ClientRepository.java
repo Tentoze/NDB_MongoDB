@@ -1,55 +1,80 @@
 package library.repository;
 
-import com.mongodb.client.ClientSession;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
-import library.model.Book;
 import library.model.Client;
-import org.bson.BsonDocument;
-import org.bson.conversions.Bson;
+import library.repository.mongo.ClientMongoRepository;
+import library.repository.redis.ClientRedisRepository;
 
-public class ClientRepository extends AbstractMongoRepository<Client> {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
+public class ClientRepository implements RepositoryInterface<Client>{
+    private ClientRedisRepository clientRedisRepository;
+    private ClientMongoRepository clientMongoRepository;
 
-    public ClientRepository() {
-        super("clients", Client.class);
+    public ClientRepository(ClientRedisRepository clientRedisRepository, ClientMongoRepository clientMongoRepository) {
+        this.clientRedisRepository = clientRedisRepository;
+        this.clientMongoRepository = clientMongoRepository;
+    }
+    @Override
+    public Client add(Client entity) {
+        clientRedisRepository.add(entity);
+        clientMongoRepository.add(entity);
+        return entity;
     }
 
-    public Client findByPersonalID(String personalID) {
-        MongoCollection<Client> collection = mongoDatabase.getCollection(collectionName, Client.class);
-        Bson filter = Filters.eq("personalid", personalID);
-        return collection.find().filter(filter).first();
-    }
-
-    public void update(Client client) {
-        ClientSession clientSession = mongoClient.startSession();
-        try {
-            clientSession.startTransaction();
-            MongoCollection<Client> clientsCollection = mongoDatabase.getCollection(collectionName, Client.class);
-            Bson filter = Filters.eq("_id", client.getEntityId());
-
-            Bson setUpdate = Updates.combine(
-                    Updates.set("firstname", client.getFirstName()),
-                    Updates.set("lastname", client.getLastName()),
-                    Updates.set("personalid", client.getPersonalID()),
-                    Updates.set("age", client.getAge()),
-                    Updates.set("archived", client.isArchived()),
-                    Updates.set("debt", client.getDebt())
-
-            );
-
-            clientsCollection.updateOne(clientSession, filter, setUpdate);
-            clientSession.commitTransaction();
-        } catch (Exception e) {
-            clientSession.abortTransaction();
-        } finally {
-            clientSession.close();
+    @Override
+    public Optional<Client> getById(UUID id) {
+        Client client = null;
+        if (clientRedisRepository.checkConnection()) {
+            client = clientRedisRepository.getById(id).orElse(null);
         }
+        if (client == null) {
+            return Optional.ofNullable(clientMongoRepository.findById(id));
+        }
+        return Optional.of(client);
     }
 
-    public void clearDatabase() {
-        MongoCollection<Client> collection = mongoDatabase.getCollection(collectionName, Client.class);
-        collection.drop();
+
+    public Optional<Client> getByPersonalID(String personalID) {
+        Client client = null;
+        if (clientRedisRepository.checkConnection()) {
+            client = clientRedisRepository.findAll().stream().filter(i -> i.getPersonalID().equals(personalID)).findFirst().orElse(null);
+        }
+        if (client == null) {
+            return Optional.ofNullable(clientMongoRepository.findByPersonalID(personalID));
+        }
+        return Optional.of(client);
+    }
+
+    @Override
+    public void delete(UUID id) {
+        clientRedisRepository.delete(id);
+        clientMongoRepository.delete(id);
+    }
+
+    @Override
+    public void update(Client entity) {
+        clientRedisRepository.update(entity);
+        clientMongoRepository.update(entity);
+    }
+
+    @Override
+    public long size() {
+        return findAll().size();
+    }
+
+    @Override
+    public List<Client> findAll() {
+        List<Client> clients = new ArrayList<>();
+        if (clientRedisRepository.checkConnection()) {
+            List<Client> found = clientRedisRepository.findAll();
+            clients.addAll(found);
+        } else {
+            List<Client> found = clientMongoRepository.findAll();
+            clients.addAll(found);
+        }
+        return clients;
     }
 }

@@ -1,12 +1,20 @@
 package library.model;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonProperty;
 
+import java.util.UUID;
+
 @Getter
 @Setter
+@EqualsAndHashCode
+@NoArgsConstructor
+@SuperBuilder
 public class Book extends AbstractEntity {
 
     @BsonProperty("serialnumber")
@@ -40,7 +48,7 @@ public class Book extends AbstractEntity {
     }
 
     public Book(String title, String author, String serialNumber, String genre) {
-        super(new UniqueId());
+        super(new UniqueId(UUID.randomUUID()));
         this.serialNumber = serialNumber;
         this.title = title;
         this.author = author;

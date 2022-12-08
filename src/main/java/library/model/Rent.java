@@ -2,9 +2,11 @@ package library.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonDiscriminator;
 import org.bson.codecs.pojo.annotations.BsonProperty;
@@ -15,7 +17,9 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@BsonDiscriminator
+@EqualsAndHashCode
+@NoArgsConstructor
+@SuperBuilder
 public class Rent extends AbstractEntity {
 
     @BsonProperty("begintime")
@@ -51,7 +55,7 @@ public class Rent extends AbstractEntity {
     }
 
     public Rent(Client client, Book book) {
-        super(new UniqueId());
+        super(new UniqueId(UUID.randomUUID()));
         this.client = client;
         this.book = book;
         this.beginTime = new Date();

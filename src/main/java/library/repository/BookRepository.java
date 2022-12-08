@@ -1,117 +1,81 @@
 package library.repository;
 
-
-import com.mongodb.MongoClientSettings;
-import com.mongodb.MongoCommandException;
-import com.mongodb.client.ClientSession;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.CreateCollectionOptions;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
-import com.mongodb.client.model.ValidationOptions;
 import library.model.Book;
-import library.model.UniqueIdCodecProvider;
-import org.bson.Document;
-import org.bson.UuidRepresentation;
-import org.bson.codecs.configuration.CodecRegistries;
-import org.bson.conversions.Bson;
+import library.model.Client;
+import library.repository.mongo.BookMongoRepository;
+import library.repository.redis.BookRedisRepository;
 
-public class BookRepository extends AbstractMongoRepository {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
+public class BookRepository implements RepositoryInterface<Book>{
+    private BookRedisRepository bookRedisRepository;
+    private BookMongoRepository bookMongoRepository;
 
-    public BookRepository() {
-        super("books", Book.class);
+    public BookRepository(BookRedisRepository bookRedisRepository, BookMongoRepository bookMongoRepository) {
+        this.bookRedisRepository = bookRedisRepository;
+        this.bookMongoRepository = bookMongoRepository;
     }
-    public Book findBySerialNumber(String serialNumber) {
-        MongoCollection<Book> collection = mongoDatabase.getCollection(collectionName, Book.class);
-        Bson filter = Filters.eq("serialnumber", serialNumber);
-        return collection.find().filter(filter).first();
-    }
-
-    public void update(Book book) {
-
-        ClientSession clientSession = mongoClient.startSession();
-        try {
-            clientSession.startTransaction();
-            MongoCollection<Book> booksCollection = mongoDatabase.getCollection(collectionName, Book.class);
-            Bson filter = Filters.eq("_id", book.getEntityId());
-
-            Bson setUpdate = Updates.combine(
-                    Updates.set("title", book.getTitle()),
-                    Updates.set("author", book.getAuthor()),
-                    Updates.set("serialnumber", book.getSerialNumber()),
-                    Updates.set("genre", book.getGenre()),
-                    Updates.set("archived",book.isArchived()),
-                    Updates.set("rented",book.getIsRented())
-            );
-
-            booksCollection.updateOne(clientSession, filter, setUpdate);
-            clientSession.commitTransaction();
-        } catch (Exception e) {
-            clientSession.abortTransaction();
-        } finally {
-            clientSession.close();
-        }
-
-    }
-
-    public void clearDatabase() {
-        MongoCollection<Book> collection = mongoDatabase.getCollection(collectionName, Book.class);
-        collection.drop();
-    }
-
-    public void incrementIsRented(Book book) {
-        ClientSession clientSession = mongoClient.startSession();
-        try {
-            clientSession.startTransaction();
-            MongoCollection<Book> booksCollection = mongoDatabase.getCollection(collectionName, Book.class);
-            Bson filter = Filters.eq("_id", book.getEntityId());
-            Bson update = Updates.inc("rented",1);
-            booksCollection.updateOne(clientSession,filter,update);
-            clientSession.commitTransaction();
-        } catch (Exception e) {
-            clientSession.abortTransaction();
-        } finally {
-            clientSession.close();
-        }
+    @Override
+    public Book add(Book entity) {
+     //   bookRedisRepository.add(entity);
+        bookMongoRepository.add(entity);
+        return entity;
     }
 
     @Override
-    protected void initDbConnection() {
-            MongoClientSettings settings = MongoClientSettings.builder()
-                    .credential(credential)
-                    .applyConnectionString(connectionString)
-                    .uuidRepresentation(UuidRepresentation.STANDARD)
-                    .codecRegistry(CodecRegistries.fromRegistries(
-                            CodecRegistries.fromProviders(new UniqueIdCodecProvider()),
-                            MongoClientSettings.getDefaultCodecRegistry(),
-                            pojoCodecRegistry)
-                    ).build();
-            mongoClient = MongoClients.create(settings);
-            mongoDatabase = mongoClient.getDatabase("library");
-            ValidationOptions validationOptions = new ValidationOptions().validator(
-                Document.parse("""
-                        {
-                            $jsonSchema:{
-                                "bsonType": "object",
-                                "required": ["_id","rented"]
-                                "properties": {
-                                    "rented": {
-                                        "bsonType" : "int",
-                                        "minimum" : 0,
-                                        "maximum" : 1
-                                    }
-                                }
-                            }
-                        }
-                        """));
-        CreateCollectionOptions createCollectionOptions = new CreateCollectionOptions()
-                .validationOptions(validationOptions);
-            try {
-                mongoDatabase.createCollection("books", createCollectionOptions);
-            } catch (Exception e) {
+    public Optional<Book> getById(UUID id) {
+        Book book = null;
+        if (bookRedisRepository.checkConnection()) {
+            book = bookRedisRepository.getById(id).orElse(null);
+        }
+        if (book == null) {
+            return Optional.ofNullable(bookMongoRepository.findById(id));
+        }
+        return Optional.of(book);
+    }
 
-            }
+    @Override
+    public void delete(UUID id) {
+        bookMongoRepository.delete(id);
+        bookRedisRepository.delete(id);
+    }
+
+    @Override
+    public void update(Book entity) {
+        bookRedisRepository.update(entity);
+        bookMongoRepository.update(entity);
+    }
+
+    @Override
+    public long size() {
+        return findAll().size();
+    }
+
+    @Override
+    public List<Book> findAll() {
+        List<Book> books = new ArrayList<>();
+        if (bookRedisRepository.checkConnection()) {
+            List<Book> found = bookRedisRepository.findAll();
+            books.addAll(found);
+        } else {
+            List<Book> found = bookMongoRepository.findAll();
+            books.addAll(found);
+        }
+        return books;
+    }
+
+    public Optional<Book> getBySerialNumber(String serialNumber) {
+        Book book = null;
+/*        if (bookRedisRepository.checkConnection()) {
+            book = bookRedisRepository.findBySerialNumber(serialNumber);
+        }*/
+        if (book == null) {
+            return Optional.ofNullable(bookMongoRepository.findBySerialNumber(serialNumber));
+        }
+        return Optional.of(book);
     }
 }
+

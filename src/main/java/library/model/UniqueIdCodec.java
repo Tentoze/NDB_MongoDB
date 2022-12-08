@@ -1,5 +1,8 @@
 package library.model;
 
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
@@ -9,6 +12,9 @@ import org.bson.codecs.configuration.CodecRegistry;
 
 import java.util.UUID;
 
+@EqualsAndHashCode
+@NoArgsConstructor
+@SuperBuilder
 public class UniqueIdCodec implements Codec<UniqueId> {
 
     private Codec<UUID> uuidCodec;
