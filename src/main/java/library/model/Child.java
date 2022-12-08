@@ -4,9 +4,11 @@ import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonDiscriminator;
 import org.bson.codecs.pojo.annotations.BsonProperty;
@@ -15,6 +17,9 @@ import java.util.UUID;
 
 @Getter
 @BsonDiscriminator(key = "_clazz",value = "child")
+@EqualsAndHashCode
+@NoArgsConstructor
+@SuperBuilder
 public class Child extends Client {
     @BsonCreator
     public Child(@BsonProperty("firstname") String firstName,

@@ -6,6 +6,12 @@ import library.model.Rent;
 import library.repository.BookRepository;
 import library.repository.ClientRepository;
 import library.repository.RentRepository;
+import library.repository.mongo.BookMongoRepository;
+import library.repository.mongo.ClientMongoRepository;
+import library.repository.mongo.RentMongoRepository;
+import library.repository.redis.BookRedisRepository;
+import library.repository.redis.ClientRedisRepository;
+import library.repository.redis.RentRedisRepository;
 
 
 import java.util.Date;
@@ -18,17 +24,16 @@ public class RentManager {
     private BookRepository bookRepository;
 
     public RentManager() {
-        this.rentRepository = new RentRepository();
-        this.clientRepository = new ClientRepository();
-        this.bookRepository = new BookRepository();
+        this.rentRepository = new RentRepository(new RentMongoRepository(), new RentRedisRepository());
+        this.clientRepository = new ClientRepository(new ClientRedisRepository(),new ClientMongoRepository());
+        this.bookRepository = new BookRepository(new BookRedisRepository(),new BookMongoRepository());
     }
 
     public Rent rentBook(String personalID, String serialNumber) throws Exception {
         try {
-            Client client = clientRepository.findByPersonalID(personalID);
-            Book book = bookRepository.findBySerialNumber(serialNumber);
+            Client client = clientRepository.getByPersonalID(personalID).orElseThrow();
+            Book book = bookRepository.getBySerialNumber(serialNumber).orElseThrow();
             checkIfBookCanBeRented(client, book);
-            bookRepository.incrementIsRented(book);
             Rent rent = new Rent(client, book);
             rentRepository.add(rent);
             return rent;
@@ -57,10 +62,7 @@ public class RentManager {
 
     public void returnBook(String serialNumber) {
         try {
-            Book book = bookRepository.findBySerialNumber(serialNumber);
-            if (book == null) {
-                throw new Exception("There is no book with that serial number");
-            }
+            Book book = bookRepository.getBySerialNumber(serialNumber).orElseThrow(() -> new Exception("There is no book with that serial number"));
             Rent rent = rentRepository.findByBook(book);
             if (rent == null) {
                 throw new Exception("There is no rent with this book");
@@ -86,11 +88,11 @@ public class RentManager {
     }
 
     public Rent getRentByBook(String serialnumber) {
-        return rentRepository.findByBook(bookRepository.findBySerialNumber(serialnumber));
+        return rentRepository.findByBook(bookRepository.getBySerialNumber(serialnumber).orElse(null));
     }
 
     public List<Rent> getRentByClient(String personalID){
-        return rentRepository.findByClient(clientRepository.findByPersonalID(personalID));
+        return rentRepository.findByClient(clientRepository.getByPersonalID(personalID).orElse(null));
     }
 
 

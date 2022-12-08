@@ -1,16 +1,31 @@
 package library.model;
 
 
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.annotation.JsonbSubtype;
+import jakarta.json.bind.annotation.JsonbTypeInfo;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonDiscriminator;
 import org.bson.codecs.pojo.annotations.BsonProperty;
 
+import java.util.Random;
+import java.util.UUID;
 
+
+@JsonbTypeInfo({
+        @JsonbSubtype(alias = "child", type = Child.class),
+        @JsonbSubtype(alias = "adult", type = Adult.class)
+})
 @Getter
 @Setter
 @BsonDiscriminator(key = "_clazz")
+@NoArgsConstructor
+@SuperBuilder
 public abstract class Client extends AbstractEntity {
 
     @BsonProperty("personalid")
@@ -27,14 +42,14 @@ public abstract class Client extends AbstractEntity {
     private Float debt;
 
     @BsonCreator
-    public Client(@BsonProperty("_id") UniqueId enitityId,
+    public Client(@BsonProperty("_id") UniqueId entityId,
                   @BsonProperty("firstname") String firstName,
                   @BsonProperty("lastname") String lastName,
                   @BsonProperty("personalid") String personalID,
                   @BsonProperty("isarchived") boolean isArchived,
                   @BsonProperty("debt") Float debt,
                   @BsonProperty("age") Integer age) {
-        super(enitityId);
+        super(entityId);
         this.firstName = firstName;
         this.lastName = lastName;
         this.personalID = personalID;
@@ -44,7 +59,7 @@ public abstract class Client extends AbstractEntity {
     }
 
     public Client(String firstName, String lastName,  String personalID, Integer age) {
-        super(new UniqueId());
+        super(new UniqueId(UUID.randomUUID()));
         this.firstName = firstName;
         this.lastName = lastName;
         this.personalID = personalID;
