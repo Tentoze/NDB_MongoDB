@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class ClientRepository implements RepositoryInterface<Client>{
+public class ClientRepository implements RepositoryInterface<Client> {
     private ClientRedisRepository clientRedisRepository;
     private ClientMongoRepository clientMongoRepository;
 
@@ -17,6 +17,7 @@ public class ClientRepository implements RepositoryInterface<Client>{
         this.clientRedisRepository = clientRedisRepository;
         this.clientMongoRepository = clientMongoRepository;
     }
+
     @Override
     public Client add(Client entity) {
         clientRedisRepository.add(entity);
@@ -37,15 +38,8 @@ public class ClientRepository implements RepositoryInterface<Client>{
     }
 
 
-    public Optional<Client> getByPersonalID(String personalID) {
-        Client client = null;
-        if (clientRedisRepository.checkConnection()) {
-            client = clientRedisRepository.findAll().stream().filter(i -> i.getPersonalID().equals(personalID)).findFirst().orElse(null);
-        }
-        if (client == null) {
-            return Optional.ofNullable(clientMongoRepository.findByPersonalID(personalID));
-        }
-        return Optional.of(client);
+    public Client getByPersonalID(String personalID) {
+        return clientMongoRepository.findByPersonalID(personalID);
     }
 
     @Override

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class mainTest {
@@ -59,8 +60,8 @@ class mainTest {
         var client2 = clientManager.registerClient("dziecko", "naziwsko", "2313123341", 13);
         var book1 = bookManager.registerBook("najlepssza ksiega1", "najlepszy autor1", "21313412", "genre");
         var book2 = bookManager.registerBook("najlepssza ksiega2", "najlepszy autor2", "21313413", "genre");
-        rentManager.rentBook("2313123341", "21313412");
-        rentManager.rentBook("2313123341", "21313413");
+        rentManager.rentBook(client1.getEntityId().getUUID(), book1.getEntityId().getUUID());
+        rentManager.rentBook(client2.getEntityId().getUUID(), book2.getEntityId().getUUID());
 
         assertEquals(clientMongoRepository.findByPersonalID("231312341").toString(), client1.toString());
         client1.setAge(50);
@@ -73,13 +74,13 @@ class mainTest {
     @Test
     void addSameObjects2() throws Exception {
 
-        clientManager.registerClient("imie", "naziwsko", "231312341", 45);
-        clientManager.registerClient("dziecko", "naziwsko", "2313123341", 13);
+        var client1 = clientManager.registerClient("imie", "naziwsko", "231312341", 45);
+        var client2 = clientManager.registerClient("dziecko", "naziwsko", "2313123341", 13);
 
-        bookManager.registerBook("najlepssza ksiega", "najlepszy autor", "2131341", "genre");
-        rentManager.rentBook("2313123341", "2131341");
+        var book1 = bookManager.registerBook("najlepssza ksiega", "najlepszy autor", "2131341", "genre");
+        rentManager.rentBook(client1.getEntityId().getUUID(), book1.getEntityId().getUUID());
         assertThrows(Exception.class, () -> {
-            rentManager.rentBook("2313123341", "2131341");
+            rentManager.rentBook(client1.getEntityId().getUUID(), book1.getEntityId().getUUID());
         });
         assertThrows(Exception.class, () -> {
             bookManager.registerBook("najlepssza ksiega", "najlepszy autor", "2131341", "genre");
@@ -88,35 +89,28 @@ class mainTest {
             clientManager.registerClient("dziecko", "naziwsko", "2313123341", 13);
         });
     }
-
-
     @Test
-    void checkTooMuchRents() throws Exception {
-        var client2 = clientManager.registerClient("dziecko", "naziwsko", "2313123341", 13);
-        var book1 = bookManager.registerBook("najlepssza ksiega1", "najlepszy autor1", "21313412", "genre");
-        var book2 = bookManager.registerBook("najlepssza ksiega2", "najlepszy autor2", "21313413", "genre");
-        var book3 = bookManager.registerBook("najlepssza ksiega3", "najlepszy autor3", "21313414", "genre");
-        var book4 = bookManager.registerBook("najlepssza ksiega4", "najlepszy autor4", "21313415", "genre");
-        rentManager.rentBook("2313123341", "21313412");
-        rentManager.rentBook("2313123341", "21313413");
-        rentManager.rentBook("2313123341", "21313414");
-        rentManager.getRentByBook("21313414");
-        assertThrows(Exception.class, () -> {
-            rentManager.rentBook("2313123341", "21313415");
-        });
+    void lostConnectionTest() throws Exception {
+        Book book = bookManager.registerBook("someTitle", "someAuthor", "123", "someGenre");
+        Book foundBook = bookManager.getBook(book.getEntityId().getUUID());
+        assertEquals(book.toString(),foundBook.toString());
+        bookRedisRepository.close();
+        assertFalse(bookRedisRepository.checkConnection());
+        Book foundBook2 = bookManager.getBook(book.getEntityId().getUUID());
+        assertEquals(book.toString(),foundBook2.toString());
     }
 
     @Test
     void checkUnregisterClientAndBook() throws Exception {
         clientManager.registerClient("imie", "naziwsko", "231312341", 45);
-        clientManager.registerClient("dziecko", "naziwsko", "2313123341", 13);
+        var client = clientManager.registerClient("dziecko", "naziwsko", "2313123341", 13);
         bookManager.registerBook("najlepssza ksiega1", "najlepszy autor1", "21313412", "genre");
-        bookManager.registerBook("najlepssza ksiega2", "najlepszy autor2", "21313413", "genre");
+        var book = bookManager.registerBook("najlepssza ksiega2", "najlepszy autor2", "21313413", "genre");
         clientManager.unregisterClient("231312341");
         bookManager.unregisterBook("21313412");
         assertTrue(clientManager.getClient("231312341").isArchived());
         assertTrue(bookManager.getBook("21313412").isArchived());
-        rentManager.rentBook("2313123341", "21313413");
+        rentManager.rentBook(client.getEntityId().getUUID(), book.getEntityId().getUUID());
         assertThrows(Exception.class, () -> {
             clientManager.unregisterClient("2313123341");
         });
@@ -139,7 +133,6 @@ class mainTest {
        rentMongoRepository.add(rent);
        bookMongoRepository.incrementIsRented(book);
         bookMongoRepository.incrementIsRented(book2);
-
     }
 
 

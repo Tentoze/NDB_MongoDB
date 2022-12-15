@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class BookRepository implements RepositoryInterface<Book>{
+public class BookRepository implements RepositoryInterface<Book> {
     private BookRedisRepository bookRedisRepository;
     private BookMongoRepository bookMongoRepository;
 
@@ -18,9 +18,10 @@ public class BookRepository implements RepositoryInterface<Book>{
         this.bookRedisRepository = bookRedisRepository;
         this.bookMongoRepository = bookMongoRepository;
     }
+
     @Override
     public Book add(Book entity) {
-     //   bookRedisRepository.add(entity);
+        bookRedisRepository.add(entity);
         bookMongoRepository.add(entity);
         return entity;
     }
@@ -67,15 +68,8 @@ public class BookRepository implements RepositoryInterface<Book>{
         return books;
     }
 
-    public Optional<Book> getBySerialNumber(String serialNumber) {
-        Book book = null;
-/*        if (bookRedisRepository.checkConnection()) {
-            book = bookRedisRepository.findBySerialNumber(serialNumber);
-        }*/
-        if (book == null) {
-            return Optional.ofNullable(bookMongoRepository.findBySerialNumber(serialNumber));
-        }
-        return Optional.of(book);
+    public Book getBySerialNumber(String serialNumber) {
+        return bookMongoRepository.findBySerialNumber(serialNumber);
     }
 }
 

@@ -16,6 +16,7 @@ import library.repository.redis.RentRedisRepository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 public class RentManager {
 
@@ -29,10 +30,10 @@ public class RentManager {
         this.bookRepository = new BookRepository(new BookRedisRepository(),new BookMongoRepository());
     }
 
-    public Rent rentBook(String personalID, String serialNumber) throws Exception {
+    public Rent rentBook(UUID clientID, UUID bookID) throws Exception {
         try {
-            Client client = clientRepository.getByPersonalID(personalID).orElseThrow();
-            Book book = bookRepository.getBySerialNumber(serialNumber).orElseThrow();
+            Client client = clientRepository.getById(clientID).orElseThrow(() -> new RuntimeException("There is no client with that ID"));
+            Book book = bookRepository.getById(bookID).orElseThrow(() -> new RuntimeException("There is no book with that ID"));
             checkIfBookCanBeRented(client, book);
             Rent rent = new Rent(client, book);
             rentRepository.add(rent);
@@ -60,9 +61,9 @@ public class RentManager {
         }
     }
 
-    public void returnBook(String serialNumber) {
+    public void returnBook(Book book) {
         try {
-            Book book = bookRepository.getBySerialNumber(serialNumber).orElseThrow(() -> new Exception("There is no book with that serial number"));
+            bookRepository.getById(book.getEntityId().getUUID()).orElseThrow(() -> new Exception("There is no book with that serial number"));
             Rent rent = rentRepository.findByBook(book);
             if (rent == null) {
                 throw new Exception("There is no rent with this book");
@@ -88,11 +89,11 @@ public class RentManager {
     }
 
     public Rent getRentByBook(String serialnumber) {
-        return rentRepository.findByBook(bookRepository.getBySerialNumber(serialnumber).orElse(null));
+        return rentRepository.findByBook(bookRepository.getBySerialNumber(serialnumber));
     }
 
     public List<Rent> getRentByClient(String personalID){
-        return rentRepository.findByClient(clientRepository.getByPersonalID(personalID).orElse(null));
+        return rentRepository.findByClient(clientRepository.getByPersonalID(personalID));
     }
 
 

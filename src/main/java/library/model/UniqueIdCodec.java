@@ -9,12 +9,11 @@ import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.annotations.BsonCreator;
 
 import java.util.UUID;
 
-@EqualsAndHashCode
-@NoArgsConstructor
-@SuperBuilder
+
 public class UniqueIdCodec implements Codec<UniqueId> {
 
     private Codec<UUID> uuidCodec;

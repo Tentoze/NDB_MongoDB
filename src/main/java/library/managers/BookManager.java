@@ -10,6 +10,7 @@ import library.repository.redis.RentRedisRepository;
 
 
 import java.util.List;
+import java.util.UUID;
 
 public class BookManager {
     private BookRepository bookRepository;
@@ -21,7 +22,10 @@ public class BookManager {
     }
 
     public Book getBook(String serialNumber) {
-        return bookRepository.getBySerialNumber(serialNumber).orElse(null);
+        return bookRepository.getBySerialNumber(serialNumber);
+    }
+    public Book getBook(UUID bookID) {
+        return bookRepository.getById(bookID).orElse(null);
     }
 
     public List<Book> findAllBooks() {
@@ -30,7 +34,7 @@ public class BookManager {
 
     public Book registerBook(String title, String author, String serialNumber, String genre) {
         Book book = new Book(title, author, serialNumber, genre);
-        if(bookRepository.getBySerialNumber(serialNumber).orElse(null) == null){
+        if(bookRepository.getBySerialNumber(serialNumber) == null){
             bookRepository.add(book);
         } else {
             throw new RuntimeException("Ta ksiazka została istnieje juz w bazie danych");
@@ -39,7 +43,7 @@ public class BookManager {
     }
 
     public void unregisterBook(String serialNumber) throws Exception {
-        Book book = bookRepository.getBySerialNumber(serialNumber).orElseThrow(() -> new Exception("There is no book with that SerialNumber"));
+        Book book = bookRepository.getBySerialNumber(serialNumber);
         if (rentRepository.findByBook(book) != null) {
             throw new Exception("This book is already rented");
         }

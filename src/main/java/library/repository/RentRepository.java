@@ -31,7 +31,7 @@ public class RentRepository implements RepositoryInterface<Rent> {
 
     @Override
     public Rent add(Rent entity) {
-       // rentRedisRepository.add(entity);
+        rentRedisRepository.add(entity);
         rentMongoRepository.add(entity);
         return entity;
     }
