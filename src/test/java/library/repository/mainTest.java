@@ -6,6 +6,7 @@ import library.managers.RentManager;
 import library.model.Book;
 import library.model.Client;
 import library.model.Rent;
+import library.repository.kafka.Topics;
 import library.repository.mongo.BookMongoRepository;
 import library.repository.mongo.ClientMongoRepository;
 import library.repository.mongo.RentMongoRepository;
