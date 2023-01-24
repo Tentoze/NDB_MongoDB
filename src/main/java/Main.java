@@ -5,6 +5,5 @@ public class Main {
         Consumers consumers = new Consumers();
         consumers.initConsumers();
         consumers.consumeTopicsByGroup(100000);
-
         }
 }
