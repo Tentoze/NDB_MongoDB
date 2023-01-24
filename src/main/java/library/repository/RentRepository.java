@@ -1,8 +1,12 @@
 package library.repository;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import library.model.Book;
 import library.model.Client;
 import library.model.Rent;
+import library.repository.kafka.Consumers;
+import library.repository.kafka.Producer;
+import library.repository.kafka.Topics;
 import library.repository.mongo.RentMongoRepository;
 import library.repository.redis.RentRedisRepository;
 
@@ -10,15 +14,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 public class RentRepository implements RepositoryInterface<Rent> {
 
     private RentMongoRepository rentMongoRepository;
     private RentRedisRepository rentRedisRepository;
+    private Producer producer;
 
     public RentRepository(RentMongoRepository rentMongoRepository, RentRedisRepository rentRedisRepository) {
         this.rentMongoRepository = rentMongoRepository;
         this.rentRedisRepository = rentRedisRepository;
+        try {
+            Topics.RENT_TOPIC.createTopic();
+            this.producer = new Producer();
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Rent findByBook(Book book) {
@@ -31,8 +45,18 @@ public class RentRepository implements RepositoryInterface<Rent> {
 
     @Override
     public Rent add(Rent entity) {
+
         rentRedisRepository.add(entity);
         rentMongoRepository.add(entity);
+        try {
+            producer.send(entity);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return entity;
     }
 

@@ -20,27 +20,27 @@ import java.util.concurrent.Executors;
 public class Consumers {
     List<KafkaConsumer<UUID,String>> consumersGroup = new ArrayList<>();
     private static final String BOOTSTRAP_SERVERS_CONFIG = "kafka1:9192,kafka2:9292,kafka3:9392";
-    private static final Integer NUMBER_OF_CONSUMERS = 5;
+    private static final Integer NUMBER_OF_CONSUMERS = 2;
 
     public void initConsumers(){
         Properties consumerConfig =new Properties();
         consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, UUIDDeserializer.class.getName());
         consumerConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, Topics.CONSUMER_GROUP_NAME);
+        consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, Topics.CONSUMER_GROUP_NAME.getTopic());
         consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS_CONFIG);
         for (int i = 0; i < NUMBER_OF_CONSUMERS; i++) {
             KafkaConsumer<UUID,String> kafkaConsumer = new KafkaConsumer(consumerConfig);
-            kafkaConsumer.subscribe(Arrays.asList(Topics.RENT_TOPIC.getTopic()));
+            kafkaConsumer.subscribe(Collections.singletonList(Topics.RENT_TOPIC.getTopic()));
             consumersGroup.add(kafkaConsumer);
         }
     }
 
-    public void consumeTopicsByGroup() throws InterruptedException {
-        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    public void consumeTopicsByGroup(Integer timeInMilis) throws InterruptedException {
+        ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CONSUMERS);
         for (KafkaConsumer<UUID,String> consumer : consumersGroup) {
             executorService.execute(() -> consume(consumer));
         }
-        Thread.sleep(10000);
+        Thread.sleep(timeInMilis);
         for (KafkaConsumer<UUID,String> consumer : consumersGroup) {
             consumer.wakeup();
         }
