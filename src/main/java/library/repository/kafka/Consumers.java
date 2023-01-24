@@ -1,12 +1,21 @@
 package library.repository.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.TopicConfig;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.UUIDDeserializer;
 
+import java.text.MessageFormat;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Consumers {
     List<KafkaConsumer<UUID,String>> consumersGroup = new ArrayList<>();
@@ -26,4 +35,42 @@ public class Consumers {
         }
     }
 
+    public void consumeTopicsByGroup() throws InterruptedException {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        for (KafkaConsumer<UUID,String> consumer : consumersGroup) {
+            executorService.execute(() -> consume(consumer));
+        }
+        Thread.sleep(10000);
+        for (KafkaConsumer<UUID,String> consumer : consumersGroup) {
+            consumer.wakeup();
+        }
+        executorService.shutdown();
+    }
+
+    private void consume(KafkaConsumer<UUID,String> consumer) {
+        try {
+            consumer.poll(0);
+            Set<TopicPartition> consumerAssignment = consumer.assignment();
+            System.out.println(consumer.groupMetadata().memberId() + " " + consumerAssignment);
+            consumer.seekToBeginning(consumerAssignment);
+            Duration timeout = Duration.of(100, ChronoUnit.MILLIS);
+            MessageFormat formatter = new MessageFormat("Konsument {5}, Temat{0}, partycja {1}, offset {2, number, integer}, klucz {3}, wartość {4}");
+            while (true) {
+                ConsumerRecords<UUID,String> records = consumer.poll(timeout);
+                for(ConsumerRecord<UUID,String> record : records) {
+                    String result = formatter.format(new Object[]{
+                            record.topic(),
+                            record.partition(),
+                            record.offset(),
+                            record.key(),
+                            record.value(),
+                            consumer.groupMetadata().memberId()
+                    });
+                    System.out.println(result);
+                }
+            }
+        } catch (WakeupException we) {
+            System.out.println("Job ended");
+        }
+    }
 }
