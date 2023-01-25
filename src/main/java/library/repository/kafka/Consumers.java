@@ -1,5 +1,11 @@
 package library.repository.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import library.model.Adult;
+import library.model.Child;
+import library.model.Rent;
+import library.repository.mongo.RentMongoRepository;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -18,9 +24,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Consumers {
+    RentMongoRepository rentMongoRepository = new RentMongoRepository();
     List<KafkaConsumer<UUID,String>> consumersGroup = new ArrayList<>();
     private static final String BOOTSTRAP_SERVERS_CONFIG = "kafka1:9192,kafka2:9292,kafka3:9392";
     private static final Integer NUMBER_OF_CONSUMERS = 2;
+
 
     public void initConsumers(){
         Properties consumerConfig =new Properties();
@@ -37,6 +45,7 @@ public class Consumers {
 
     public void consumeTopicsByGroup(Integer timeInMilis) throws InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CONSUMERS);
+        rentMongoRepository.clearDatabase();
         for (KafkaConsumer<UUID,String> consumer : consumersGroup) {
             executorService.execute(() -> consume(consumer));
         }
@@ -48,6 +57,7 @@ public class Consumers {
     }
 
     private void consume(KafkaConsumer<UUID,String> consumer) {
+        List<String> values = new ArrayList<>();
         try {
             consumer.poll(0);
             Set<TopicPartition> consumerAssignment = consumer.assignment();
@@ -66,11 +76,25 @@ public class Consumers {
                             record.value(),
                             consumer.groupMetadata().memberId()
                     });
+                    values.add(record.value());
                     System.out.println(result);
+
                 }
             }
         } catch (WakeupException we) {
             System.out.println("Job ended");
+            values.forEach(rent -> rentMongoRepository.add(getRentFromStringValue(rent)));
         }
+    }
+    public Rent getRentFromStringValue(String value) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerSubtypes(Adult.class, Child.class);
+        Rent rent;
+        try {
+            rent = mapper.readValue(value, Rent.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return rent;
     }
 }

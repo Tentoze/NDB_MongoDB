@@ -1,6 +1,8 @@
 package library.model;
 
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.json.bind.annotation.JsonbCreator;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
@@ -17,6 +19,7 @@ import java.util.Random;
 import java.util.UUID;
 
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "_clazz")
 @JsonbTypeInfo({
         @JsonbSubtype(alias = "child", type = Child.class),
         @JsonbSubtype(alias = "adult", type = Adult.class)
@@ -24,8 +27,13 @@ import java.util.UUID;
 @Getter
 @Setter
 @BsonDiscriminator(key = "_clazz")
+@EqualsAndHashCode
 @NoArgsConstructor
 @SuperBuilder
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = Adult.class, name = "adult"),
+        @JsonSubTypes.Type(value = Child.class, name = "child")
+})
 public abstract class Client extends AbstractEntity {
 
     @BsonProperty("personalid")

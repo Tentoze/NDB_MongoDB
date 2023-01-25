@@ -10,6 +10,7 @@ import lombok.experimental.SuperBuilder;
 import org.bson.codecs.pojo.annotations.BsonCreator;
 import org.bson.codecs.pojo.annotations.BsonId;
 import org.bson.codecs.pojo.annotations.BsonProperty;
+import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.io.Serializable;
 import java.util.UUID;

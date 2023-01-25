@@ -2,6 +2,8 @@ package library.repository.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import library.model.Adult;
+import library.model.Child;
 import library.model.Rent;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -34,11 +36,13 @@ public class Producer {
         producerConfig.put(ProducerConfig.CLIENT_ID_CONFIG, ID_CONFIG);
         producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS_CONFIG);
         producerConfig.put(ProducerConfig.ACKS_CONFIG, "all");
+        producerConfig.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         this.producer = new KafkaProducer<>(producerConfig);
     }
 
     public void send(Rent rent) throws JsonProcessingException, ExecutionException, InterruptedException {
         ObjectMapper mapper = new ObjectMapper();
+        mapper.registerSubtypes(Adult.class, Child.class);
         String jsonObject = mapper.writeValueAsString(rent);
         ProducerRecord<UUID, String> record = new ProducerRecord<>(Topics.RENT_TOPIC.getTopic(),
                 rent.getEntityId().getUUID(), jsonObject);
